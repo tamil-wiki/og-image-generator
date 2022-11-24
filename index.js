@@ -141,6 +141,7 @@ app.get('/submit/category/:category?/:today?', wrap(async (req, res, next) => {
 }));
 
 app.get('/view/:pageid-:title.webp', wrap(async (req, res, next) => {
+    console.time('viewOG');
     const title = req.params.title;
     console.log("Requesting image ", req.params.title);
     res.set('Content-Type', 'image/webp')
@@ -170,7 +171,14 @@ app.get('/view/:pageid-:title.webp', wrap(async (req, res, next) => {
             const page = await browser.newPage();        // Open a new page
             await page.goto(`http://localhost:3000/view/${req.params.pageid}-${req.params.title}`, {
                 waitUntil: ['domcontentloaded', 'networkidle0'],
+            }).catch(e => {
+                console.error(e);
+                throw e;
+            }).then((response) => { 
+                if (response.status() != 200)  
+                    throw new Error("Request to Rendering failed " + response.statusText());
             });
+            
             const screenshot = await page.screenshot({
                 path: fileLocation,                   // Save the screenshot in current directory
                 type: 'webp',
@@ -189,16 +197,27 @@ app.get('/view/:pageid-:title.webp', wrap(async (req, res, next) => {
                 console.log('Sent:', fileLocation)
             }
         })
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+        console.error(err); 
+        res.statusMessage = err;
+        res.status(500).send(err);
+    }
+    console.timeEnd('viewOG');
 }));
 
 app.get('/view/:pageid-:title', wrap(async (req, res, next) => {
-    var data = await collectPageData(
+    try {
+        var data = await collectPageData(
         {...requestParams,
             title: req.params.title
         });
-    console.log(data);
-    res.render('og', data);    
+        console.log(data);
+        res.render('og', data);    
+    } catch (err) { 
+        console.error(err); 
+        res.statusMessage = "Rendering Failed";
+        res.status(500).send(err);
+    }
 }));
 
 
