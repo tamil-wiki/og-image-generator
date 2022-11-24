@@ -1,0 +1,31 @@
+{
+  "name": "tamil-wiki-opengraph",
+  "description": "Generates Open Graph image for a Wiki Page based on the first image and introduction text",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Thirumalai Veerasamy",
+    "email": "techy@thiru.in"
+  },
+  "repository": "https://github.com/tamil-wiki/og-generator",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "async": "^3.2.3",
+    "axios": "^0.27.2",
+    "axios-extensions": "^3.1.3",
+    "axios-request-throttle": "^1.0.0",
+    "body-parser": "^1.20.0",
+    "cors": "^2.8.5",
+    "dotenv": "^4.0.0",
+    "ejs": "^3.1.8",
+    "express": "^4.18.1",
+    "full-icu": "^1.4.0",
+    "puppeteer": "^17.1.3",
+    "puppeteer-cluster": "^0.23.0"
+  },
+  "devDependencies": {
+    "@types/async": "^3.2.13"
+  }
+}
