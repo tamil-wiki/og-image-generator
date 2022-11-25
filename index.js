@@ -205,7 +205,7 @@ app.get('/view/:pageid-:title.webp', wrap(async (req, res, next) => {
     console.timeEnd('viewOG');
 }));
 
-app.get('/view/:pageid-:title', wrap(async (req, res, next) => {
+async function renderImage(req, res) {
     try {
         var data = await collectPageData(
         {...requestParams,
@@ -218,7 +218,14 @@ app.get('/view/:pageid-:title', wrap(async (req, res, next) => {
         res.statusMessage = "Rendering Failed";
         res.status(500).send(err);
     }
+}
+
+app.get('/og/images/:pageid-:title.webp', wrap(async (req, res, next) => {
+    renderImage(req, res);
 }));
 
+app.get('/og/images/:title.webp', wrap(async (req, res, next) => {
+    renderImage(req, res);
+}));
 
 app.listen(port, () => console.log(`Tamil Wiki OG app listening on port ${port}!`))
