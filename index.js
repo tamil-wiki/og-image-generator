@@ -13,7 +13,9 @@ const { Cluster } = require('puppeteer-cluster');
 var cluster;
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+const OG_WIDTH = process.env.OG_WIDTH || 1632;
+const OG_HEIGHT = process.env.OG_HEIGHT || 854;
 
 const requestParams = {
     title: "",
@@ -48,7 +50,7 @@ const batchRequestParams = {
                 "--disable-setuid-sandbox",
                 "--no-sandbox"
             ],
-            defaultViewport:{width:1632, height:854},
+            defaultViewport:{width:OG_WIDTH, height:OG_HEIGHT},
         },    
     });
 
@@ -65,7 +67,7 @@ const batchRequestParams = {
                     path: fileLocation,                   // Save the screenshot in current directory
                     type: 'webp',
                     quality: 80,
-                    clip: { x: 0, y: 0, width: 1632, height: 854 }
+                    clip: { x: 0, y: 0, width: OG_WIDTH, height: OG_HEIGHT }
                 });
                 console.log("Generated ", title, fileLocation);
             } else {
@@ -165,7 +167,7 @@ app.get('/view/:pageid-:title.webp', wrap(async (req, res, next) => {
                     "--disable-setuid-sandbox",
                     "--no-sandbox"
                 ],
-                defaultViewport:{width:1632, height:854},
+                defaultViewport:{width:OG_WIDTH, height:OG_HEIGHT},
             });    // Launch a "browser"
             
             const page = await browser.newPage();        // Open a new page
@@ -183,7 +185,7 @@ app.get('/view/:pageid-:title.webp', wrap(async (req, res, next) => {
                 path: fileLocation,                   // Save the screenshot in current directory
                 type: 'webp',
                 quality: 80,
-                clip: { x: 0, y: 0, width: 1632, height: 854 }
+                clip: { x: 0, y: 0, width: OG_WIDTH, height: OG_HEIGHT }
               });
             
             await page.close();                           // Close the website
