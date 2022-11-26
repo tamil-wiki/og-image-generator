@@ -16,6 +16,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const OG_WIDTH = process.env.OG_WIDTH || 1632;
 const OG_HEIGHT = process.env.OG_HEIGHT || 854;
+const offlineLocation = process.env.OFFLINE_FOLDER || "/tmp";
 
 const requestParams = {
     title: "",
@@ -60,7 +61,7 @@ const batchRequestParams = {
             console.log('processing ', data);
             const fileLocation = "/out/%page-id%.webp".replace("%page-id%", pageid);
             if (force || !fs.existsSync(fileLocation)) {
-                await page.goto(`http://localhost:3000/view/${pageid}-${title}`, {
+                await page.goto(`http://localhost:${port}/view/${pageid}-${title}`, {
                     waitUntil: ['domcontentloaded', 'networkidle0'],
                 });
                 const screenshot = await page.screenshot({
@@ -142,70 +143,69 @@ app.get('/submit/category/:category?/:today?', wrap(async (req, res, next) => {
     res.status(200).send('Submitted Requests');
 }));
 
-app.get('/view/:pageid-:title.webp', wrap(async (req, res, next) => {
-    console.time('viewOG');
+async function renderOpenGraphImage(req, res, offlineFile) {
+    
+    console.time('renderOpenGraphImage');
     const title = req.params.title;
     console.log("Requesting image ", req.params.title);
-    res.set('Content-Type', 'image/webp')
-    const fileLocation = "/out/%page-id%.webp".replace("%page-id%", req.params.pageid);
 
-    const options = {
-        dotfiles: 'deny',
-        headers: {
-          'x-timestamp': Date.now(),
-          'x-sent': true
-        }
-    };
     try {
-        if (req.query.force || !fs.existsSync(fileLocation)) {
-            console.log("File doesn't exists or forced to create, generate it", fileLocation);
-            const browser = await puppeteer.launch({
-                headless: true,
-                args: [
-                    "--disable-gpu",
-                    "--disable-dev-shm-usage",
-                    "--disable-setuid-sandbox",
-                    "--no-sandbox"
-                ],
-                defaultViewport:{width:OG_WIDTH, height:OG_HEIGHT},
-            });    // Launch a "browser"
-            
-            const page = await browser.newPage();        // Open a new page
-            await page.goto(`http://localhost:3000/view/${req.params.pageid}-${req.params.title}`, {
-                waitUntil: ['domcontentloaded', 'networkidle0'],
-            }).catch(e => {
-                console.error(e);
-                throw e;
-            }).then((response) => { 
-                if (response.status() != 200)  
-                    throw new Error("Request to Rendering failed " + response.statusText());
-            });
-            
-            const screenshot = await page.screenshot({
-                path: fileLocation,                   // Save the screenshot in current directory
-                type: 'webp',
-                quality: 80,
-                clip: { x: 0, y: 0, width: OG_WIDTH, height: OG_HEIGHT }
-              });
-            
-            await page.close();                           // Close the website
-            await browser.close();                        // Close the browser            
+        if (offlineFile) {
+            console.log("Creating offline file", offlineFile);
         }
-        console.log("Streaming image", fileLocation);
-        res.sendFile(fileLocation, options, (err) => {
-            if (err) {
-                next(err)
-            } else {
-                console.log('Sent:', fileLocation)
-            }
-        })
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: [
+                "--disable-gpu",
+                "--disable-dev-shm-usage",
+                "--disable-setuid-sandbox",
+                "--no-sandbox"
+            ],
+            defaultViewport: {
+                width:OG_WIDTH, 
+                height:OG_HEIGHT
+            },
+        });    // Launch a "browser"
+        
+        const page = await browser.newPage();        // Open the OG Render page
+        await page.goto(`http://localhost:${port}/view/${req.params.title}`, {
+            waitUntil: ['domcontentloaded', 'networkidle0'],
+        }).catch(e => {
+            console.error(e);
+            throw e;
+        }).then((response) => { 
+            if (response.status() != 200)  
+                throw new Error("Request to Rendering failed " + response.statusText());
+        });
+        
+        const screenshot = await page.screenshot({
+            path: offlineFile,                   // Save the screenshot in current directory
+            type: 'webp',
+            quality: 80,
+            clip: { x: 0, y: 0, width: OG_WIDTH, height: OG_HEIGHT }
+            });
+        
+        await page.close();                           // Close the website
+        await browser.close();                        // Close the browser            
+        res.set('Content-Type', 'image/webp');
+        res.status(200).end(screenshot);
     } catch (err) { 
         console.error(err); 
         res.statusMessage = err;
         res.status(500).send(err);
     }
-    console.timeEnd('viewOG');
+    console.timeEnd('renderOpenGraphImage');
+}
+
+app.get('/og/images/:pageid-:title.webp', wrap(async (req, res, next) => {
+    const fileLocation = `${offlineLocation}/${req.params.pageid}.webp`;
+    renderOpenGraphImage(req, res, fileLocation);
 }));
+
+app.get('/og/images/:title.webp', wrap(async (req, res, next) => {
+    renderOpenGraphImage(req, res, null);
+}));
+
 
 async function renderImage(req, res) {
     try {
@@ -213,7 +213,8 @@ async function renderImage(req, res) {
         {...requestParams,
             title: req.params.title
         });
-        console.log(data);
+        //console.log(data);
+        // Refer /views/og.ejs for template
         res.render('og', data);    
     } catch (err) { 
         console.error(err); 
@@ -222,11 +223,11 @@ async function renderImage(req, res) {
     }
 }
 
-app.get('/og/images/:pageid-:title.webp', wrap(async (req, res, next) => {
+app.get('/view/:pageid-:title', wrap(async (req, res, next) => {
     renderImage(req, res);
 }));
 
-app.get('/og/images/:title.webp', wrap(async (req, res, next) => {
+app.get('/view/:title', wrap(async (req, res, next) => {
     renderImage(req, res);
 }));
 
