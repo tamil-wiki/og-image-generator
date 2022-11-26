@@ -17,6 +17,7 @@ const port = process.env.PORT || 3000;
 const OG_WIDTH = process.env.OG_WIDTH || 1632;
 const OG_HEIGHT = process.env.OG_HEIGHT || 854;
 const offlineLocation = process.env.OFFLINE_FOLDER || "/tmp";
+const TIMEOUT = process.env.TIMEOUT || 10000; // 10 seconds
 
 const requestParams = {
     title: "",
@@ -63,6 +64,7 @@ const batchRequestParams = {
             if (force || !fs.existsSync(fileLocation)) {
                 await page.goto(`http://localhost:${port}/view/${pageid}-${title}`, {
                     waitUntil: ['domcontentloaded', 'networkidle0'],
+                    timeout: TIMEOUT
                 });
                 const screenshot = await page.screenshot({
                     path: fileLocation,                   // Save the screenshot in current directory
@@ -170,6 +172,7 @@ async function renderOpenGraphImage(req, res, offlineFile) {
         const page = await browser.newPage();        // Open the OG Render page
         await page.goto(`http://localhost:${port}/view/${req.params.title}`, {
             waitUntil: ['domcontentloaded', 'networkidle0'],
+            timeout: TIMEOUT
         }).catch(e => {
             console.error(e);
             throw e;
