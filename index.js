@@ -170,7 +170,7 @@ async function renderOpenGraphImage(req, res, offlineFile) {
         });    // Launch a "browser"
         
         const page = await browser.newPage();        // Open the OG Render page
-        await page.goto(`http://localhost:${port}/view/${req.params.title}`, {
+        await page.goto(`http://localhost:${port}/og/view/${req.params.title}`, {
             waitUntil: ['domcontentloaded', 'networkidle0'],
             timeout: TIMEOUT
         }).catch(e => {
@@ -202,11 +202,13 @@ async function renderOpenGraphImage(req, res, offlineFile) {
 
 app.get('/og/images/:pageid-:title.webp', wrap(async (req, res, next) => {
     const fileLocation = `${offlineLocation}/${req.params.pageid}.webp`;
-    renderOpenGraphImage(req, res, fileLocation);
+    res.status(500).send("NA");
+    //renderOpenGraphImage(req, res, fileLocation);
 }));
 
 app.get('/og/images/:title.webp', wrap(async (req, res, next) => {
-    renderOpenGraphImage(req, res, null);
+    res.status(500).send("NA");
+    //renderOpenGraphImage(req, res, null);
 }));
 
 
@@ -226,11 +228,11 @@ async function renderImage(req, res) {
     }
 }
 
-app.get('/view/:pageid-:title', wrap(async (req, res, next) => {
+app.get('/og/view/:pageid-:title', wrap(async (req, res, next) => {
     renderImage(req, res);
 }));
 
-app.get('/view/:title', wrap(async (req, res, next) => {
+app.get('/og/view/:title', wrap(async (req, res, next) => {
     renderImage(req, res);
 }));
 
