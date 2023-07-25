@@ -202,13 +202,13 @@ async function renderOpenGraphImage(req, res, offlineFile) {
 
 app.get('/og/images/:pageid-:title.webp', wrap(async (req, res, next) => {
     const fileLocation = `${offlineLocation}/${req.params.pageid}.webp`;
-    res.status(500).send("NA");
-    //renderOpenGraphImage(req, res, fileLocation);
+    //res.status(500).send("NA");
+    renderOpenGraphImage(req, res, fileLocation);
 }));
 
 app.get('/og/images/:title.webp', wrap(async (req, res, next) => {
-    res.status(500).send("NA");
-    //renderOpenGraphImage(req, res, null);
+    //res.status(500).send("NA");
+    renderOpenGraphImage(req, res, null);
 }));
 
 
